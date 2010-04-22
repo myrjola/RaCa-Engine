@@ -1,0 +1,614 @@
+#LyX 1.6.5 created this file. For more info see http://www.lyx.org/
+\lyxformat 345
+\begin_document
+\begin_header
+\textclass article
+\use_default_options true
+\language english
+\inputencoding auto
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_default_family default
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+
+\graphics default
+\paperfontsize default
+\use_hyperref false
+\papersize default
+\use_geometry false
+\use_amsmath 1
+\use_esint 1
+\cite_engine basic
+\use_bibtopic false
+\paperorientation portrait
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\defskip medskip
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\author "" 
+\author "" 
+\end_header
+
+\begin_body
+
+\begin_layout Title
+RaCa-Engine
+\end_layout
+
+\begin_layout Standard
+\align center
+
+\shape italic
+Martin Yrjölä
+\end_layout
+
+\begin_layout Standard
+\align center
+
+\shape italic
+84086N
+\end_layout
+
+\begin_layout Standard
+\align center
+
+\shape italic
+TIK-09
+\end_layout
+
+\begin_layout Section
+Structure
+\end_layout
+
+\begin_layout Subsection
+MVC
+\end_layout
+
+\begin_layout Standard
+The project is going to be a simple pseudo 3D engine using a technique called
+ ray-casting for rendering.
+ I strive for a modular and flexible design.
+ If the engine could be easily refitted to a free-time game project I have
+ succeeded.
+\end_layout
+
+\begin_layout Standard
+I chose to use the Model-View-Controller pattern for this project.
+ I had already decided to separate rendering from the rest of the logic(movement
+, collision-detection, etc.) and considered the usage of a design pattern
+ to clarify the framework.
+ MVC also separates the data (Model) from the manipulator (Controller),
+ so it should provide even more flexibility.
+ E.g.
+ the viewpoint could be controlled by keyboard and switched to AI or mouse
+ control only by switching the Controller.
+ 
+\end_layout
+
+\begin_layout Standard
+I had thought of skipping the Controller part and let the Entities themselves
+ handle input-control and collision detection.
+ This is what many games do, because it's easier to handle many instances.
+ My engine won't have hordes of actors on the screen so the MVC-pattern
+ was motivated for more flexible control of few instances.
+\end_layout
+
+\begin_layout Subsection
+The Model
+\end_layout
+
+\begin_layout Subsubsection
+World
+\end_layout
+
+\begin_layout Standard
+The representation of the environment to be visualized.
+ The only notable method is wallAtPos which tells if a wall is at the given
+ coordinates.
+\end_layout
+
+\begin_layout Subsubsection
+Entity
+\end_layout
+
+\begin_layout Standard
+The basic world object.
+ Functions only as a container of it's statet.
+ The state is modified by the Controllers.
+ Can be subclassed to for example a Viewer or Enemy with different constants.
+\end_layout
+
+\begin_layout Subsubsection
+Settings
+\end_layout
+
+\begin_layout Standard
+A container of the HashMap with settings.
+ It's more about defensive coding to have the HashMap encapsulated in an
+ object.
+ If I chose to change the data structure the interface won't break.
+\end_layout
+
+\begin_layout Subsection
+The View
+\end_layout
+
+\begin_layout Subsubsection
+MiniMapView
+\end_layout
+
+\begin_layout Standard
+\align center
+\begin_inset Graphics
+	filename minimap.png
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+I chose to implement a top-down view of the world.
+ It brings the possibility to test if movement is working correctly in an
+ early stage of development.
+ Additionally it will have quite similar structure and program flow as the
+ 3DRenderer below.
+ This will be ideal to test out if the structure is suitable for the engine.
+ The update method draws the map view on the 2DGraphics parameter.
+\end_layout
+
+\begin_layout Subsubsection
+3DRenderer
+\end_layout
+
+\begin_layout Standard
+Takes care of rendering the 3D-view to a 2DGraphics object.
+ It uses the Composite pattern with different EngineComponents doing their
+ tasks.
+ For example the RayCaster finds the distance to walls, which are then drawn
+ by WallDrawer and shaded by Shader.
+ The Composite pattern makes the Renderer more modular.
+ I could begin with a SimpleWallDrawer to draw Walls of one color and then
+ switch it to TexturedWallDrawer to draw textured walls.
+ The components also divide the task to smaller, more manageable parts.
+\end_layout
+
+\begin_layout Subsubsection
+SettingsWindowView
+\end_layout
+
+\begin_layout Standard
+A settings window which could be invoked in-game and change options on the
+ fly.
+ Will be implemented if time permits.
+\end_layout
+
+\begin_layout Subsection
+The Controller
+\end_layout
+
+\begin_layout Subsubsection
+InputController
+\end_layout
+
+\begin_layout Standard
+Handles input from mouse or keyboard.
+ Sets the viewers acceleration and direction, or invokes actions like pause
+ or menu.
+ The InputController contains the appropriate event listeners to the main
+ window and processes the events only in the update method for thread safety.
+\end_layout
+
+\begin_layout Subsubsection
+PhysicsController
+\end_layout
+
+\begin_layout Standard
+Handles the Entity's movement and collision checking.
+\end_layout
+
+\begin_layout Subsubsection
+SettingsController
+\end_layout
+
+\begin_layout Standard
+Contains a list of objects containing settings and makes sure they all are
+ updated.
+\end_layout
+
+\begin_layout Subsubsection
+FileController
+\end_layout
+
+\begin_layout Standard
+Loads settings- or level-files.
+ Creates Settings and World objects respectively.
+\end_layout
+
+\begin_layout Section
+Use case
+\end_layout
+
+\begin_layout Standard
+When starting the program a settings window shows up.
+ The FileController parses the settings file and passes the result to SettingsWi
+ndowView which fills the window with forms or drop-down menus according
+ to the given settings.
+ The user chooses his/her preferences, for example resolution and which
+ level to play and presses the OK-button.
+ 
+\end_layout
+
+\begin_layout Standard
+After the options are set the main window opens.
+ Now the rest of modules initialize and the SettingsController passes the
+ new settings to them.
+ The main window shows the rendered world and the user can start exploring
+ it.
+ The user uses the keyboard for movement, the keypresses are processed in
+ the InputController which modifies the viewer Entity's direction and accelerati
+on.
+ The viewers actual movement is calculated in PhysicsController, which also
+ handles collisions with walls.
+ The world is drawn by the 3DRenderer and it's EngineComponents.
+ 
+\end_layout
+
+\begin_layout Standard
+When escape is pressed the options window opens again and the user chooses
+ a bigger resolution.
+ When applied the SettingsController updates the settings and the touched
+ parts reinitialize.
+ This results in the main window resizing and the exploring continues until
+ the user chooses to quit the application.
+\end_layout
+
+\begin_layout Section
+Mathematical formulas
+\end_layout
+
+\begin_layout Subsection
+Distance
+\end_layout
+
+\begin_layout Standard
+The walls are aligned in a grid.
+ Therefore to calculate the distance to a wall I only need to check for
+ walls between the grids.
+ So there's a check for both horisontal and vertical walls.
+ To get the first intersection I only have to round to the nearest multiple
+ of grid width taking the directions quadrant into consideration.
+\end_layout
+
+\begin_layout Standard
+\align center
+\begin_inset Graphics
+	filename find_wall.png
+	scale 80
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\align center
+\begin_inset Formula $\triangle x=\frac{grid\: height}{\tan(angle)}$
+\end_inset
+
+, 
+\begin_inset Formula $\triangle y=grid\: width*\tan(angle)$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+After I find the position of the wall the distance is computed by the following
+ formulas:
+\end_layout
+
+\begin_layout Itemize
+If there was a wall on a vertical grid:
+\end_layout
+
+\begin_layout Standard
+\align center
+\begin_inset Formula $distance=abs(\frac{viewerX-collisionX}{cos(direction)})$
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+For horizontal walls the formula looks like this:
+\end_layout
+
+\begin_layout Standard
+\align center
+\begin_inset Formula $distance=abs(\frac{viewerY-collisionY}{\sin(\text{direction})})$
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Distance correction
+\end_layout
+
+\begin_layout Standard
+Now the walls are projected on a flat surface.
+ This is okay for a screen.
+ But it's not how the human eye sees things because its round.
+ The distortion is corrected by the following formula:
+\end_layout
+
+\begin_layout Standard
+\align center
+\begin_inset Formula $corrected\: distance=distorted\: distance*\cos(angle)$
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Interpolation
+\end_layout
+
+\begin_layout Standard
+The engine will update it's logic at fixed rate and visuals at variable
+ FPS.
+ This means frames will also be rendered between ticks.
+ So the renderer must predict where an entity is going to be for a smoother
+ experience on fast hardware.
+ The formula looks like:
+\end_layout
+
+\begin_layout Standard
+\align center
+\begin_inset Formula $prediction=position+(speed+acceleration)*interpolation$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\align center
+\begin_inset Formula $interpolation=\frac{time\: to\: next\: tick}{time\: between\: ticks}$
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\end_layout
+
+\begin_layout Section
+Data structures
+\end_layout
+
+\begin_layout Subsection
+World
+\end_layout
+
+\begin_layout Standard
+The world is represented by a two-dimensional matrix int[height][width].
+ So the world is grid-based.
+ This makes it much more effective to check where a ray collides with a
+ wall.
+ An alternative would be that the walls are represented by lines.
+ This would allow diagonal alignment of walls, which was not demanded in
+ the specification.
+ So I chose the simpler alternative.
+\end_layout
+
+\begin_layout Subsection
+Settings
+\end_layout
+
+\begin_layout Standard
+The settings are stored in a HashMap, which makes modification of settings
+ when the program is running possible.
+ It also provides quick look-ups.
+ Objects that contain settings implement the ContainsSettings interface
+ and have their own HashMap containing only keys to settings they need.
+ Another way is to hard-code the settings to enumerators, but then the possibili
+ty of run-time modification is lost.
+\end_layout
+
+\begin_layout Section
+Time usage estimation
+\end_layout
+
+\begin_layout Standard
+My first priority is to get something to show on screen.
+ It increases motivation and eases testing when I can instantly see how
+ the newly written code behaves.
+ Therefore I will implement Entity, World and MiniMapView first.
+ The Entity and World classes are quite simple, about 3 hours to implement.
+ MiniMapView involves researching in how to draw shapes in Swing and implementin
+g a Predictor.
+ But shouldn't take too long.
+ I estimate 4 hours.
+ 
+\end_layout
+
+\begin_layout Standard
+Next it's time to get the Entity moving correctly.
+ I haven't looked that much into Swing's handling of InputEvents, so to
+ figure out how to implement InputController could take a while hopefully
+ it's done in 4 hours.
+ PhysicsController is a 3 hour task.
+\end_layout
+
+\begin_layout Standard
+Now I will add settings support through SettingsController.
+ It's best to implement before the renderer to get the dirty details working
+ in a simpler environment.
+ This is one of the hardest to estimate, because things could not work as
+ planned.
+ A careful estimation would be 6 hours.
+ The FileController is also added at this stage, approximately 3 hours job.
+\end_layout
+
+\begin_layout Standard
+Finally time for the 3DRenderer.
+ It's very similar to the architecture of MiniMapView so it's mostly about
+ implementing the underlying EngineComponents.
+ The math is already thought out and if I get stuck there's Permadi's excellent
+ ray-casting tutorial, also mentioned in the References.
+ But there's much to write, so I would say about 10 hours of coding.
+\end_layout
+
+\begin_layout Standard
+Hereafter the engine is already conforming to the project specification.
+ The rest is about polish and extra features.
+ E.g.
+ refactoring, settings window and a level editor.
+ I will not estimate the time spent into this stage because it's all about
+ enthusiasm.
+\end_layout
+
+\begin_layout Standard
+The above 33 hour estimation is for coding only.
+ The project documentation and testing will be done side by side with coding
+ and will probably take about the same time.
+\end_layout
+
+\begin_layout Section
+Unit testing plan
+\end_layout
+
+\begin_layout Standard
+Because of the visual nature of the application many parts are easier to
+ test with plain eyesight, namely all modules that has something to do with
+ drawing.
+ I choose to get the visual aspects of the application working without writing
+ unit tests for them.
+ After the project is in the polishing stage I will reconsider testing.
+ Here is some testable modules and how to test them:
+\end_layout
+
+\begin_layout Subsection
+InputController
+\end_layout
+
+\begin_layout Standard
+Thankfully java.awt.Robot exists.
+ It's a class to generate system input events.
+ The tests will check if InputController modifies it's Entity correctly.
+ For example the Robot passes a event of pressing the up-key.
+ Now the Entity should have a positive acceleration.
+\end_layout
+
+\begin_layout Subsection
+Predictor
+\end_layout
+
+\begin_layout Standard
+The Predictor component should work for normal inputs according to the interpola
+tion formula.
+ There will be basic tests.
+ But there's some special cases to consider.
+ If the Entity's predicted position is inside a wall the view wouldn't look
+ so nice.
+ If this is the case the predictor should return the old coordinates.
+\end_layout
+
+\begin_layout Subsection
+PhysicsController
+\end_layout
+
+\begin_layout Standard
+Should be tested for different movement cases.
+ When an Entity collides with a perpendicular wall, it should stop.
+ When the collision isn't at right angles the Entity should slide smoothly
+ along the wall.
+\end_layout
+
+\begin_layout Subsection
+FileController
+\end_layout
+
+\begin_layout Standard
+It's important that the files are parsed correctly.
+ There will be tests with preset files and reference results.
+ More importantly there will be tests with corrupt files which should result
+ in some kind of exceptions.
+\end_layout
+
+\begin_layout Section
+Attachments
+\end_layout
+
+\begin_layout Standard
+classdiagram.png - A UML class-diagram of the project.
+\end_layout
+
+\begin_layout Bibliography
+\begin_inset CommandInset bibitem
+LatexCommand bibitem
+label "Ray-Casting Tutorial"
+key "key-1"
+
+\end_inset
+
+ 
+\begin_inset CommandInset href
+LatexCommand href
+name "http://www.permadi.com/tutorial/raycast/index.html"
+target "http://www.permadi.com/tutorial/raycast/index.html"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Bibliography
+\begin_inset CommandInset bibitem
+LatexCommand bibitem
+label "Java-API"
+key "key-4"
+
+\end_inset
+
+
+\begin_inset CommandInset href
+LatexCommand href
+name "http://java.sun.com/javase/6/docs/api/"
+target "http://java.sun.com/javase/6/docs/api/"
+
+\end_inset
+
+
+\end_layout
+
+\end_body
+\end_document

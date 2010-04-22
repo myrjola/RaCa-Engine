@@ -1,0 +1,20 @@
+RaCa-Engine - A ray casting engine.
+
+Compiling from source:
+
+Make sure you have JUnit4 in your classpath or the tests won't compile.
+
+In Unix environments the command is:
+
+find . -name *.java | xargs javac
+
+Alternatively you can just cherry-pick files and throw them to javac.
+
+
+Running the level editor:
+
+You should be in the base directory, same as you found this README. Run the
+level editor with:
+
+java -classpath src/ leveleditor.LevelEditor
+
